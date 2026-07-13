@@ -186,7 +186,9 @@ def create_distribution_figure(
     mean, variance, deviation = distribution_moments(distribution)
     mask = event_mask(x, spec.kind, event, value_1, value_2)
 
-    figure, axes = plt.subplots(1, 2, figsize=(13.6, 5.9), facecolor=PALETTE["figure_bg"])
+    # Disposición vertical: cada gráfico aprovecha todo el ancho disponible,
+    # especialmente cuando la aplicación se incrusta en Google Sites.
+    figure, axes = plt.subplots(2, 1, figsize=(11.8, 10.8), facecolor=PALETTE["figure_bg"])
     density_axis, cdf_axis = axes
     _prepare_axis(density_axis)
     _prepare_axis(cdf_axis)
@@ -225,7 +227,7 @@ def create_distribution_figure(
             "linewidth": 1.2,
         },
     )
-    figure.subplots_adjust(left=0.07, right=0.98, top=0.79, bottom=0.16, wspace=0.29)
+    figure.subplots_adjust(left=0.085, right=0.98, top=0.86, bottom=0.09, hspace=0.42)
 
     visible_min, visible_max = float(np.min(x)), float(np.max(x))
     limits = [value_1] + ([value_2] if value_2 is not None else [])
