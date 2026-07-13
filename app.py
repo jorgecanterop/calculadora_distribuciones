@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -196,6 +198,51 @@ def apply_theme_css() -> None:
               min-height: 2.75rem;
               font-weight: 700;
           }}
+
+          /* Selector táctil: usa st.menu_button, no un campo de texto.
+             Por ello no recibe cursor de escritura ni abre el teclado virtual. */
+          .touch-menu-label {{
+              color: {colors['text']} !important;
+              font-size: .875rem;
+              line-height: 1.25;
+              margin: 0 0 .35rem 0;
+          }}
+          [data-testid="stMenuButton"] {{
+              width: 100%;
+          }}
+          [data-testid="stMenuButtonButton"] {{
+              width: 100% !important;
+              min-height: 2.55rem !important;
+              justify-content: space-between !important;
+              background: {colors['surface_alt']} !important;
+              border: 1px solid {colors['border']} !important;
+              border-radius: 9px !important;
+              color: {colors['text']} !important;
+              font-weight: 400 !important;
+          }}
+          [data-testid="stMenuButtonButton"] > div {{
+              width: 100% !important;
+              justify-content: space-between !important;
+          }}
+          [data-testid="stMenuButtonButton"] p,
+          [data-testid="stMenuButtonButton"] span,
+          [data-testid="stMenuButtonButton"] svg {{
+              color: {colors['text']} !important;
+              fill: currentColor !important;
+          }}
+          [data-testid="stMenuButtonButton"] p {{
+              flex: 1 1 auto;
+              text-align: left !important;
+          }}
+          [data-testid="stMenuButtonBody"] {{
+              max-height: min(62vh, 30rem);
+              overflow-y: auto;
+          }}
+          @media (hover: hover) {{
+              [data-testid="stMenuButtonButton"]:hover {{
+                  border-color: {colors['discrete']} !important;
+              }}
+          }}
           @media (max-width: 700px) {{
               .block-container {{ padding-left: .75rem; padding-right: .75rem; }}
               .hero h1 {{ font-size: 1.55rem; }}
@@ -214,20 +261,53 @@ def clear_result() -> None:
     st.session_state.pop("calculation_result", None)
 
 
-def strict_selectbox(label: str, options, **kwargs):
-    """Crea una lista desplegable que solo admite selección con el puntero.
+def touch_menu_select(
+    label: str,
+    options,
+    *,
+    key: str,
+    index: int = 0,
+    on_change=None,
+):
+    """Selector desplegable sin entrada de texto, optimizado para pantallas táctiles.
 
-    ``filter_mode=None`` desactiva la escritura y el filtrado por teclado, mientras
-    que ``accept_new_options=False`` impide agregar valores ajenos a la lista.
-    Estas opciones están disponibles a partir de Streamlit 1.58.
+    ``st.selectbox`` conserva internamente un elemento de entrada para navegación y
+    filtrado, incluso cuando no admite opciones nuevas. En algunos navegadores
+    móviles ese elemento puede abrir el teclado virtual. ``st.menu_button`` muestra
+    un menú de opciones basado en botones, por lo que no existe un campo editable
+    que pueda recibir el cursor de texto.
     """
-    return st.selectbox(
-        label,
-        options=options,
-        accept_new_options=False,
-        filter_mode=None,
-        **kwargs,
+    option_list = list(options)
+    if not option_list:
+        raise ValueError(f"El selector {label!r} debe contener al menos una opción.")
+    if not 0 <= index < len(option_list):
+        raise IndexError(f"Índice inicial fuera de rango para el selector {label!r}.")
+
+    current = st.session_state.get(key)
+    if current not in option_list:
+        current = option_list[index]
+        st.session_state[key] = current
+
+    st.markdown(
+        f'<div class="touch-menu-label">{html.escape(label)}</div>',
+        unsafe_allow_html=True,
     )
+    selected = st.menu_button(
+        str(current),
+        options=option_list,
+        key=f"{key}::menu",
+        type="secondary",
+        width="stretch",
+    )
+
+    if selected is not None and selected != current:
+        st.session_state[key] = selected
+        if on_change is not None:
+            on_change()
+        # Actualiza inmediatamente la etiqueta visible y cierra el menú.
+        st.rerun()
+
+    return st.session_state[key]
 
 
 st.markdown(
@@ -245,7 +325,7 @@ st.markdown(
 with st.expander("Configuración general", expanded=True):
     configuration_columns = st.columns(2, gap="large")
     with configuration_columns[0]:
-        selected_distribution = strict_selectbox(
+        selected_distribution = touch_menu_select(
             "Distribución",
             options=list(DISTRIBUTIONS),
             index=list(DISTRIBUTIONS).index("Normal"),
@@ -253,7 +333,7 @@ with st.expander("Configuración general", expanded=True):
             on_change=clear_result,
         )
     with configuration_columns[1]:
-        mode = strict_selectbox(
+        mode = touch_menu_select(
             "Modo de cálculo",
             options=CALCULATION_MODES,
             key="calculation_mode",
@@ -314,7 +394,7 @@ with st.container(border=True):
     st.markdown("#### Evento")
     inverse_mode = mode == CALCULATION_MODES[1]
     event_options = INVERSE_EVENTS if inverse_mode else DIRECT_EVENTS
-    event = strict_selectbox(
+    event = touch_menu_select(
         "Tipo de evento",
         options=event_options,
         key=f"event::{mode}",

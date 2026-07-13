@@ -21,14 +21,14 @@ def test_direct_event_fields_update_immediately():
     app = run_app()
     assert number_input_labels(app)[-1:] == ["x"]
 
-    app.selectbox[2].set_value("P(a ≤ X ≤ b)").run()
+    app.menu_button[2].set_value("P(a ≤ X ≤ b)").run()
     assert not app.exception
     labels = number_input_labels(app)
     assert "a" in labels
     assert "b" in labels
     assert "x" not in labels
 
-    app.selectbox[2].set_value("P(X ≥ x)").run()
+    app.menu_button[2].set_value("P(X ≥ x)").run()
     assert not app.exception
     labels = number_input_labels(app)
     assert labels[-1:] == ["x"]
@@ -38,18 +38,18 @@ def test_direct_event_fields_update_immediately():
 
 def test_inverse_event_fields_update_immediately():
     app = run_app()
-    app.selectbox[1].set_value("Evento a partir de una probabilidad").run()
+    app.menu_button[1].set_value("Evento a partir de una probabilidad").run()
     assert not app.exception
     assert "Probabilidad objetivo p" in number_input_labels(app)
 
-    app.selectbox[2].set_value("P(a ≤ X ≤ b) = p, con a conocido").run()
+    app.menu_button[2].set_value("P(a ≤ X ≤ b) = p, con a conocido").run()
     assert not app.exception
     labels = number_input_labels(app)
     assert "Probabilidad objetivo p" in labels
     assert "Límite conocido a" in labels
     assert "Límite conocido b" not in labels
 
-    app.selectbox[2].set_value("P(a ≤ X ≤ b) = p, con b conocido").run()
+    app.menu_button[2].set_value("P(a ≤ X ≤ b) = p, con b conocido").run()
     assert not app.exception
     labels = number_input_labels(app)
     assert "Probabilidad objetivo p" in labels
@@ -57,17 +57,19 @@ def test_inverse_event_fields_update_immediately():
     assert "Límite conocido a" not in labels
 
 
-def test_selectboxes_are_strict_and_form_batching_is_not_used():
+def test_touch_menus_replace_editable_selectboxes_and_form_batching_is_not_used():
     source = APP_PATH.read_text(encoding="utf-8")
-    assert "filter_mode=None" in source
-    assert "accept_new_options=False" in source
+    assert "st.menu_button(" in source
+    assert "st.selectbox(" not in source
+    assert "filter_mode=None" not in source
+    assert "accept_new_options=False" not in source
     assert "with st.form(" not in source
     assert "st.form_submit_button(" not in source
 
 
 def test_calculation_still_runs_after_reactive_update():
     app = run_app()
-    app.selectbox[2].set_value("P(a ≤ X ≤ b)").run()
+    app.menu_button[2].set_value("P(a ≤ X ≤ b)").run()
     assert not app.exception
 
     inputs = {widget.label: widget for widget in app.number_input}
