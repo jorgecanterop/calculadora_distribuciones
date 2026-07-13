@@ -415,7 +415,7 @@ else:
                 f"Se muestra el evento alcanzable más cercano (diferencia absoluta = {difference:.3g})."
             )
 
-    st.markdown("#### Información adicional de la distribución")
+    st.markdown("#### Información de la distribución")
     information_columns = st.columns(2, gap="large")
     information_columns[0].metric("Media", format_moment(mean))
     information_columns[1].metric("Varianza", format_moment(variance))
