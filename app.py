@@ -70,7 +70,7 @@ st.markdown(
           overflow: hidden;
       }
       div[data-testid="stAlert"] { border-radius: 12px; }
-      .stButton > button, .stFormSubmitButton > button {
+      .stButton > button {
           border-radius: 10px;
           min-height: 2.75rem;
           font-weight: 700;
@@ -90,11 +90,27 @@ def clear_result() -> None:
     st.session_state.pop("calculation_result", None)
 
 
+def strict_selectbox(label: str, options, **kwargs):
+    """Crea una lista desplegable que solo admite selección con el puntero.
+
+    ``filter_mode=None`` desactiva la escritura y el filtrado por teclado, mientras
+    que ``accept_new_options=False`` impide agregar valores ajenos a la lista.
+    Estas opciones están disponibles a partir de Streamlit 1.58.
+    """
+    return st.selectbox(
+        label,
+        options=options,
+        accept_new_options=False,
+        filter_mode=None,
+        **kwargs,
+    )
+
+
 st.markdown(
     """
     <div class="hero">
       <h1>Calculadora interactiva de distribuciones</h1>
-      <p>Calcule probabilidades a partir de eventos o determine límites de eventos a partir de una probabilidad. La aplicación representa la función de masa o densidad y la función de distribución acumulada.</p>
+      <p>Calcule probabilidades a partir de eventos o determine límites de eventos a partir de una probabilidad. La aplicación representa la función de densidad y la función de distribución acumulada.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -105,7 +121,7 @@ st.markdown(
 with st.expander("Configuración general", expanded=True):
     configuration_columns = st.columns(2, gap="large")
     with configuration_columns[0]:
-        selected_distribution = st.selectbox(
+        selected_distribution = strict_selectbox(
             "Distribución",
             options=list(DISTRIBUTIONS),
             index=list(DISTRIBUTIONS).index("Normal"),
@@ -113,7 +129,7 @@ with st.expander("Configuración general", expanded=True):
             on_change=clear_result,
         )
     with configuration_columns[1]:
-        mode = st.selectbox(
+        mode = strict_selectbox(
             "Modo de cálculo",
             options=CALCULATION_MODES,
             key="calculation_mode",
@@ -136,7 +152,13 @@ st.markdown(
 st.latex(spec.formula)
 
 st.subheader("Parámetros y evento")
-with st.form("distribution_calculator", clear_on_submit=False, border=True):
+
+# Los controles no se agrupan en st.form. De esta manera Streamlit vuelve a
+# ejecutar la página inmediatamente al cambiar el evento y puede mostrar los
+# campos que corresponden a la nueva selección. El cálculo continúa ejecutándose
+# solamente cuando se presiona el botón principal.
+with st.container(border=True):
+    st.markdown("#### Parámetros de la distribución")
     raw_parameters: dict[str, float] = {}
 
     parameter_columns = st.columns(min(3, len(spec.parameters)), gap="large")
@@ -151,6 +173,7 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
                     format="%d",
                     help=f"Restricción: {parameter.constraint}",
                     key=widget_key,
+                    on_change=clear_result,
                 )
             else:
                 raw_parameters[parameter.key] = st.number_input(
@@ -160,15 +183,18 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
                     format="%.2f",
                     help=f"Restricción: {parameter.constraint}",
                     key=widget_key,
+                    on_change=clear_result,
                 )
 
     st.divider()
+    st.markdown("#### Evento")
     inverse_mode = mode == CALCULATION_MODES[1]
     event_options = INVERSE_EVENTS if inverse_mode else DIRECT_EVENTS
-    event = st.selectbox(
-        "Evento",
+    event = strict_selectbox(
+        "Tipo de evento",
         options=event_options,
         key=f"event::{mode}",
+        on_change=clear_result,
     )
 
     value_1 = None
@@ -186,6 +212,7 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
                     step=0.01,
                     format="%.2f",
                     key=f"a::{spec.name}::{event}",
+                    on_change=clear_result,
                 )
             with interval_columns[1]:
                 value_2 = st.number_input(
@@ -194,6 +221,7 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
                     step=0.01,
                     format="%.2f",
                     key=f"b::{spec.name}::{event}",
+                    on_change=clear_result,
                 )
         else:
             value_1 = st.number_input(
@@ -202,6 +230,7 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
                 step=0.01,
                 format="%.2f",
                 key=f"x::{spec.name}::{event}",
+                on_change=clear_result,
             )
     else:
         target_probability = st.number_input(
@@ -213,6 +242,7 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
             format="%.4f",
             key=f"p_target::{spec.name}::{event}",
             help="Debe cumplirse 0 < p < 1.",
+            on_change=clear_result,
         )
         if event.startswith("P(a ≤ X ≤ b)"):
             known_label = "Límite conocido a" if "a conocido" in event else "Límite conocido b"
@@ -222,10 +252,16 @@ with st.form("distribution_calculator", clear_on_submit=False, border=True):
                 step=0.01,
                 format="%.2f",
                 key=f"known_limit::{spec.name}::{event}",
+                on_change=clear_result,
             )
 
     submit_label = "Calcular evento y graficar" if inverse_mode else "Calcular y graficar"
-    submitted = st.form_submit_button(submit_label, use_container_width=True, type="primary")
+    submitted = st.button(
+        submit_label,
+        width="stretch",
+        type="primary",
+        key="calculate_button",
+    )
 
 if submitted:
     try:
@@ -321,7 +357,7 @@ else:
         result["probability"],
         result_latex=result["result_latex"],
     )
-    st.pyplot(figure, use_container_width=True)
+    st.pyplot(figure, width="stretch")
     plt.close(figure)
 
     if outside_range:

@@ -90,7 +90,7 @@ def _draw_discrete_density(axis, distribution, x, mask, sampled, line_color, fil
                 bar.set_alpha(0.96)
     axis.set_xlabel("k")
     axis.set_ylabel("f(k) = P(X = k)")
-    axis.set_title(f"Función de masa · región seleccionada = {probability:.8f}", color=PALETTE["text_dim"], fontsize=11, pad=10)
+    axis.set_title(f"Función de densidad · probabilidad seleccionada = {probability:.8f}", color=PALETTE["text_dim"], fontsize=11, pad=10)
 
 
 def _draw_continuous_density(axis, distribution, x, mask, event, value_1, value_2, line_color, fill_color, probability) -> None:
