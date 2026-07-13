@@ -1,63 +1,148 @@
-# Calculadora interactiva de distribuciones — Streamlit
+# Calculadora interactiva de distribuciones de probabilidad
 
-Conversión de la notebook `Distribuciones_Especiales_eventos_y_probabilidades` a una aplicación Streamlit autónoma, preparada para utilizarse directamente o incrustarse en Google Sites.
+Aplicación web educativa para calcular probabilidades, determinar cuantiles y visualizar distribuciones de probabilidad discretas y continuas.
 
-## Funcionalidades conservadas
+## ¿Para qué sirve?
 
-- 13 distribuciones discretas y continuas.
-- Cálculo de probabilidades para eventos de cola, igualdad e intervalo.
-- Cálculo inverso de límites a partir de una probabilidad objetivo.
-- Tratamiento correcto de límites no enteros en distribuciones discretas.
-- Gráfico de la función de densidad y de la función de distribución.
-- El resultado solicitado se destaca primero: probabilidad calculada o cuantil/límite obtenido.
-- Media y varianza como información de la distribución.
-- Validaciones de parámetros y mensajes de error legibles.
+La aplicación permite trabajar de manera interactiva con distribuciones de probabilidad y relacionar tres elementos fundamentales:
 
-## Adaptaciones para Google Sites
+* los parámetros que definen una distribución;
+* el evento de interés;
+* la probabilidad o el cuantil asociado.
 
-- La configuración general ya no depende de la barra lateral de Streamlit.
-- Distribución y modo de cálculo se encuentran en un cuadro expandible dentro de la página principal.
-- El formulario y los resultados utilizan todo el ancho disponible.
-- La salida prioriza el valor solicitado; la media y la varianza se presentan después como información secundaria.
-- Los gráficos se muestran uno encima del otro para mejorar su tamaño y legibilidad.
-- Los parámetros numéricos continuos se presentan con dos decimales por defecto.
-- Las listas desplegables solo permiten seleccionar opciones existentes; la escritura y el filtrado por teclado están desactivados.
-- Al cambiar el tipo de evento, los campos de límites o probabilidad se actualizan inmediatamente sin tener que calcular primero.
-- La interfaz incluye ajustes responsivos básicos para marcos estrechos.
+Puede utilizarse para resolver ejercicios, comprobar cálculos, explorar el efecto de los parámetros y reforzar la interpretación gráfica de probabilidades y cuantiles.
 
-## Estructura
+## Modos de cálculo
 
-- `app.py`: interfaz Streamlit.
-- `distribution_engine.py`: lógica estadística independiente de la interfaz.
-- `plotting.py`: generación de gráficos Matplotlib.
-- `.streamlit/config.toml`: apariencia fija y configuración de ejecución.
-- `requirements.txt`: dependencias; requiere Streamlit 1.58 o posterior para desactivar la entrada por teclado en las listas.
-- `run_app.bat`: inicio rápido en Windows.
-- `tests/test_engine.py`: pruebas básicas del motor estadístico.
+### 1. Probabilidad a partir de un evento
 
-## Ejecución
+En este modo se especifica un evento y la aplicación calcula su probabilidad.
 
-```bash
-python -m venv .venv
-```
+Se encuentran disponibles los siguientes tipos de eventos:
 
-En Windows:
+* `P(X ≤ x)`: probabilidad acumulada hasta un valor determinado;
+* `P(X ≥ x)`: probabilidad de obtener un valor igual o mayor que un límite;
+* `P(X = x)`: probabilidad de un valor puntual;
+* `P(a ≤ X ≤ b)`: probabilidad comprendida entre dos límites.
 
-```bash
-.venv\Scripts\activate
-```
+En las distribuciones continuas, la probabilidad de un valor puntual es cero. En las distribuciones discretas, el evento `P(X = x)` solo puede tener probabilidad positiva cuando `x` pertenece al soporte de la distribución.
 
-En Linux/macOS:
+### 2. Evento a partir de una probabilidad
 
-```bash
-source .venv/bin/activate
-```
+En este modo se introduce una probabilidad objetivo y la aplicación determina el cuantil o límite correspondiente.
 
-Luego:
+Permite resolver:
 
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
+* `P(X ≤ x) = p`;
+* `P(X ≥ x) = p`;
+* `P(a ≤ X ≤ b) = p`, con `a` conocido;
+* `P(a ≤ X ≤ b) = p`, con `b` conocido.
 
-En Windows también puede iniciarse con doble clic en `run_app.bat` después de instalar las dependencias.
+Este modo resulta útil para obtener valores críticos, percentiles, límites de aceptación y puntos de corte.
+
+## Distribuciones disponibles
+
+### Distribuciones discretas
+
+* Bernoulli
+* Binomial
+* Poisson
+* Binomial negativa
+* Geométrica
+* Hipergeométrica
+
+### Distribuciones continuas
+
+* Normal
+* Exponencial
+* Uniforme
+* Gamma
+* Chi-cuadrado
+* t de Student
+* F de Fisher
+
+Para cada distribución se presenta una breve descripción, su función matemática y los parámetros necesarios para definirla.
+
+## Cómo utilizar la calculadora
+
+1. Abra el cuadro **Configuración general**.
+2. Seleccione una distribución.
+3. Seleccione el modo de cálculo:
+   * probabilidad a partir de un evento; o
+   * evento a partir de una probabilidad.
+4. Introduzca los parámetros de la distribución.
+5. Seleccione el tipo de evento.
+6. Complete los límites o la probabilidad solicitada.
+7. Presione **Calcular y graficar** o **Calcular evento y graficar**.
+
+Los campos de entrada se actualizan automáticamente cuando se cambia el tipo de evento.
+
+## Presentación de los resultados
+
+La aplicación destaca primero el resultado principal solicitado.
+
+Cuando se calcula una probabilidad, se muestra:
+
+* la probabilidad calculada;
+* su equivalencia porcentual;
+* la expresión matemática del evento.
+
+Cuando se calcula un evento a partir de una probabilidad, se muestra:
+
+* el cuantil calculado;
+* el límite inferior o superior obtenido, según corresponda;
+* la probabilidad objetivo;
+* la probabilidad efectivamente alcanzada.
+
+Como **Información de la distribución**, también se presentan:
+
+* la media;
+* la varianza.
+
+## Visualización gráfica
+
+Cada cálculo genera dos gráficos complementarios.
+
+### Función de densidad
+
+Representa cómo se distribuye la probabilidad entre los posibles valores de la variable aleatoria.
+
+La región correspondiente al evento calculado aparece resaltada, lo que permite relacionar el resultado numérico con el área o los valores considerados.
+
+En el curso se utiliza la expresión **función de densidad** tanto para distribuciones continuas como discretas.
+
+### Función de distribución acumulada
+
+Representa la probabilidad acumulada `P(X ≤ x)` en función de `x`.
+
+Este gráfico facilita la interpretación de:
+
+* probabilidades acumuladas;
+* cuantiles;
+* percentiles;
+* colas de una distribución;
+* límites asociados a una probabilidad.
+
+Los gráficos se muestran uno debajo del otro para aprovechar mejor el ancho disponible y facilitar su lectura.
+
+## Consideraciones sobre distribuciones discretas
+
+En una distribución discreta, la función acumulada avanza mediante saltos. Por este motivo, no siempre existe un valor entero que produzca exactamente la probabilidad objetivo introducida.
+
+Cuando esto ocurre, la aplicación muestra un evento alcanzable y señala la diferencia entre la probabilidad solicitada y la obtenida.
+
+Los límites no enteros se interpretan respetando el soporte discreto. Por ejemplo, un evento como `X ≤ 3.7` incluye los valores enteros hasta `3`.
+
+## Consideraciones sobre los gráficos
+
+El cálculo numérico utiliza la distribución completa. Para mantener una visualización clara, los gráficos representan un rango central adecuado de la distribución.
+
+Si un límite se encuentra fuera de ese rango visual, la aplicación lo informa. Esto no altera la probabilidad calculada.
+
+## Acceso a la aplicación
+
+La calculadora está disponible en:
+
+**https://calculadoradedistribuciones.streamlit.app/**
+
+No requiere instalación. Puede utilizarse directamente desde un navegador web en computadora, tableta o teléfono móvil.
