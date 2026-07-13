@@ -183,7 +183,7 @@ def create_distribution_figure(
     distribution = spec.build(parameters)
     x, sampled = build_plot_axis(distribution, spec.kind)
     line_color, fill_color = DISTRIBUTION_COLORS[spec.name]
-    mean, variance, deviation = distribution_moments(distribution)
+    mean, variance = distribution_moments(distribution)
     mask = event_mask(x, spec.kind, event, value_1, value_2)
 
     # Disposición vertical: cada gráfico aprovecha todo el ancho disponible,
@@ -196,7 +196,7 @@ def create_distribution_figure(
     parameter_text = "  ·  ".join(f"{key}={value:.5g}" for key, value in parameters.items())
     figure.suptitle(
         f"{spec.name}  ({parameter_text})\n"
-        f"media = {format_moment(mean)}    ·    desviación estándar = {format_moment(deviation)}    ·    varianza = {format_moment(variance)}",
+        f"media = {format_moment(mean)}    ·    varianza = {format_moment(variance)}",
         fontsize=13,
         fontweight="bold",
         color=PALETTE["text"],

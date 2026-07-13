@@ -480,12 +480,10 @@ def event_to_latex(event: str, value_1: float, value_2: float | None = None) -> 
     return rf"P({value_1:.5g} \leq X \leq {value_2:.5g})"
 
 
-def distribution_moments(distribution) -> tuple[float, float, float]:
+def distribution_moments(distribution) -> tuple[float, float]:
+    """Devuelve la media y la varianza como información descriptiva adicional."""
     mean, variance = distribution.stats(moments="mv")
-    mean = float(np.asarray(mean))
-    variance = float(np.asarray(variance))
-    deviation = np.sqrt(variance) if np.isfinite(variance) and variance >= 0 else variance
-    return mean, variance, float(deviation)
+    return float(np.asarray(mean)), float(np.asarray(variance))
 
 
 def format_moment(value: float) -> str:

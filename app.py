@@ -6,6 +6,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import streamlit as st
 
 from distribution_engine import (
@@ -62,6 +63,34 @@ st.markdown(
           border: 1px solid #D9E2EC;
           border-radius: 12px;
           padding: .55rem .75rem;
+      }
+      .primary-result {
+          background: #F1F8F4;
+          border: 2px solid #3E8B62;
+          border-radius: 15px;
+          padding: .95rem 1.1rem .8rem 1.1rem;
+          margin: .25rem 0 1rem 0;
+      }
+      .primary-result-title {
+          color: #2F6F4E;
+          font-size: .9rem;
+          font-weight: 800;
+          letter-spacing: .035em;
+          text-transform: uppercase;
+          margin-bottom: .25rem;
+      }
+      .primary-result-value {
+          color: #1F2937;
+          font-size: 2rem;
+          line-height: 1.15;
+          font-weight: 800;
+          margin-bottom: .15rem;
+          overflow-wrap: anywhere;
+      }
+      .primary-result-note {
+          color: #586474;
+          font-size: .93rem;
+          margin: 0;
       }
       [data-testid="stExpander"] {
           background: white;
@@ -290,6 +319,7 @@ if submitted:
                 "value_2": calculated_value_2,
                 "probability": achieved_probability,
                 "target_probability": float(target_probability),
+                "inverse_event_request": event,
                 "result_latex": result_latex,
             }
         else:
@@ -309,6 +339,7 @@ if submitted:
                 "value_2": float(value_2) if value_2 is not None else None,
                 "probability": probability,
                 "target_probability": None,
+                "inverse_event_request": None,
                 "result_latex": None,
             }
     except (ValueError, TypeError, OverflowError, FloatingPointError) as error:
@@ -325,12 +356,48 @@ if result is None or result.get("distribution_name") != selected_distribution or
 else:
     result_spec = DISTRIBUTIONS[result["distribution_name"]]
     result_distribution = result_spec.build(result["parameters"])
-    mean, variance, deviation = distribution_moments(result_distribution)
+    mean, variance = distribution_moments(result_distribution)
 
-    metric_columns = st.columns(3)
-    metric_columns[0].metric("Media", format_moment(mean))
-    metric_columns[1].metric("Desviación estándar", format_moment(deviation))
-    metric_columns[2].metric("Varianza", format_moment(variance))
+    if result["target_probability"] is None:
+        primary_title = "Probabilidad calculada"
+        primary_value = f"{result['probability']:.10f}"
+        primary_note = f"Equivale aproximadamente a {100 * result['probability']:.4f} %."
+    else:
+        inverse_request = result.get("inverse_event_request", "")
+        if "a conocido" in inverse_request:
+            primary_title = "Límite superior calculado (b)"
+            calculated_limit = result["value_2"]
+        elif "b conocido" in inverse_request:
+            primary_title = "Límite inferior calculado (a)"
+            calculated_limit = result["value_1"]
+        else:
+            primary_title = "Cuantil calculado (x)"
+            calculated_limit = result["value_1"]
+
+        if result_spec.kind == "discreta" and np.isclose(calculated_limit, round(calculated_limit)):
+            primary_value = str(int(round(calculated_limit)))
+        elif calculated_limit == 0:
+            primary_value = "0"
+        elif abs(calculated_limit) >= 1e6 or abs(calculated_limit) < 1e-5:
+            primary_value = f"{calculated_limit:.6e}"
+        else:
+            primary_value = f"{calculated_limit:.6f}".rstrip("0").rstrip(".")
+
+        primary_note = (
+            f"Probabilidad objetivo: {result['target_probability']:.8g}. "
+            f"Probabilidad obtenida: {result['probability']:.10f}."
+        )
+
+    st.markdown(
+        f"""
+        <div class="primary-result">
+          <div class="primary-result-title">{primary_title}</div>
+          <div class="primary-result-value">{primary_value}</div>
+          <p class="primary-result-note">{primary_note}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if result["result_latex"]:
         st.latex(result["result_latex"])
@@ -347,6 +414,11 @@ else:
                 "La distribución es discreta: no siempre existe un límite que produzca exactamente p. "
                 f"Se muestra el evento alcanzable más cercano (diferencia absoluta = {difference:.3g})."
             )
+
+    st.markdown("#### Información adicional de la distribución")
+    information_columns = st.columns(2, gap="large")
+    information_columns[0].metric("Media", format_moment(mean))
+    information_columns[1].metric("Varianza", format_moment(variance))
 
     figure, outside_range = create_distribution_figure(
         result_spec,

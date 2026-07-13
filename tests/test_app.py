@@ -76,5 +76,9 @@ def test_calculation_still_runs_after_reactive_update():
     app.button[0].click().run()
 
     assert not app.exception
-    assert len(app.metric) == 3
+    assert [metric.label for metric in app.metric] == ["Media", "Varianza"]
     assert len(app.image) == 1
+
+    page_text = " ".join(element.value for element in app.markdown)
+    assert "Probabilidad calculada" in page_text
+    assert "Desviación estándar" not in page_text
