@@ -18,48 +18,92 @@ from distribution_engine import (
     format_moment,
 )
 
-PALETTE = {
-    "figure_bg": "#FFFFFF",
-    "axes_bg": "#FCFCFD",
-    "text": "#1F2937",
-    "text_dim": "#586474",
-    "grid": "#D9E2EC",
-    "highlight": "#D8867F",
-    "result": "#3E8B62",
-    "panel_bg": "#F7FAFC",
+PALETTES = {
+    "light": {
+        "figure_bg": "#FFFFFF",
+        "axes_bg": "#FCFCFD",
+        "text": "#1F2937",
+        "text_dim": "#586474",
+        "grid": "#D9E2EC",
+        "highlight": "#D8867F",
+        "result": "#3E8B62",
+        "panel_bg": "#F7FAFC",
+    },
+    "dark": {
+        "figure_bg": "#0E141D",
+        "axes_bg": "#151D28",
+        "text": "#E7EEF6",
+        "text_dim": "#B7C5D6",
+        "grid": "#3B4A5E",
+        "highlight": "#F29A90",
+        "result": "#67D39A",
+        "panel_bg": "#1A2330",
+    },
 }
 
 DISTRIBUTION_COLORS = {
-    "Bernoulli": ("#5DADE2", "#D6EAF8"),
-    "Binomial": ("#D988B9", "#F5D5E6"),
-    "Poisson": ("#58B58B", "#D7F0E3"),
-    "Binomial negativa": ("#8A7FD1", "#E5E1F5"),
-    "Geométrica": ("#D99A55", "#F7E3CB"),
-    "Hipergeométrica": ("#4FA8A3", "#D4EEEC"),
-    "Normal": ("#8B78C6", "#E4DDF2"),
-    "Exponencial": ("#D59A42", "#F8E3BF"),
-    "Uniforme": ("#5CA9D6", "#DCEFF8"),
-    "Gamma": ("#C27850", "#F1DCCE"),
-    "Chi-cuadrado": ("#62A875", "#DCEEDD"),
-    "t de Student": ("#B76E8B", "#EFD8E2"),
-    "F de Fisher": ("#7787C7", "#DEE2F3"),
+    "light": {
+        "Bernoulli": ("#5DADE2", "#D6EAF8"),
+        "Binomial": ("#D988B9", "#F5D5E6"),
+        "Poisson": ("#58B58B", "#D7F0E3"),
+        "Binomial negativa": ("#8A7FD1", "#E5E1F5"),
+        "Geométrica": ("#D99A55", "#F7E3CB"),
+        "Hipergeométrica": ("#4FA8A3", "#D4EEEC"),
+        "Normal": ("#8B78C6", "#E4DDF2"),
+        "Exponencial": ("#D59A42", "#F8E3BF"),
+        "Uniforme": ("#5CA9D6", "#DCEFF8"),
+        "Gamma": ("#C27850", "#F1DCCE"),
+        "Chi-cuadrado": ("#62A875", "#DCEEDD"),
+        "t de Student": ("#B76E8B", "#EFD8E2"),
+        "F de Fisher": ("#7787C7", "#DEE2F3"),
+    },
+    "dark": {
+        "Bernoulli": ("#78C7F2", "#24465A"),
+        "Binomial": ("#E79BCB", "#59344A"),
+        "Poisson": ("#72D1A5", "#244E3D"),
+        "Binomial negativa": ("#A99BEA", "#403A68"),
+        "Geométrica": ("#E6B16E", "#5B4328"),
+        "Hipergeométrica": ("#71C9C4", "#264E4C"),
+        "Normal": ("#A999E1", "#413A63"),
+        "Exponencial": ("#E5B35F", "#5E4724"),
+        "Uniforme": ("#78BFE8", "#294B60"),
+        "Gamma": ("#DB9470", "#5A3B2F"),
+        "Chi-cuadrado": ("#7BC98D", "#2C5136"),
+        "t de Student": ("#D38AAA", "#583646"),
+        "F de Fisher": ("#97A5E2", "#394263"),
+    },
 }
 
 
-def _prepare_axis(axis) -> None:
-    axis.set_facecolor(PALETTE["axes_bg"])
-    axis.grid(True, color=PALETTE["grid"], alpha=0.58, linewidth=0.75)
+def _theme_name(theme: str) -> str:
+    normalized = str(theme).lower()
+    return normalized if normalized in PALETTES else "light"
+
+
+def _prepare_axis(axis, palette: dict[str, str]) -> None:
+    axis.set_facecolor(palette["axes_bg"])
+    axis.grid(True, color=palette["grid"], alpha=0.58, linewidth=0.75)
     axis.spines[["top", "right"]].set_visible(False)
-    axis.spines[["left", "bottom"]].set_color(PALETTE["grid"])
-    axis.tick_params(axis="both", colors=PALETTE["text_dim"], labelsize=9)
-    axis.xaxis.label.set_color(PALETTE["text_dim"])
-    axis.yaxis.label.set_color(PALETTE["text_dim"])
+    axis.spines[["left", "bottom"]].set_color(palette["grid"])
+    axis.tick_params(axis="both", colors=palette["text_dim"], labelsize=9)
+    axis.xaxis.label.set_color(palette["text_dim"])
+    axis.yaxis.label.set_color(palette["text_dim"])
 
 
-def _draw_discrete_density(axis, distribution, x, mask, sampled, line_color, fill_color, probability) -> None:
+def _draw_discrete_density(
+    axis,
+    distribution,
+    x,
+    mask,
+    sampled,
+    line_color,
+    fill_color,
+    probability,
+    palette: dict[str, str],
+) -> None:
     y = np.asarray(distribution.pmf(x), dtype=float)
     if sampled:
-        colors = np.where(mask, PALETTE["highlight"], line_color)
+        colors = np.where(mask, palette["highlight"], line_color)
         axis.vlines(x, 0, y, colors=colors, linewidth=1.35, alpha=0.9)
         axis.scatter(x, y, c=colors, s=17, zorder=4)
         axis.text(
@@ -68,7 +112,7 @@ def _draw_discrete_density(axis, distribution, x, mask, sampled, line_color, fil
             "Soporte amplio: se muestran puntos representativos.",
             transform=axis.transAxes,
             va="top",
-            color=PALETTE["text_dim"],
+            color=palette["text_dim"],
             fontsize=8,
         )
     else:
@@ -85,15 +129,32 @@ def _draw_discrete_density(axis, distribution, x, mask, sampled, line_color, fil
         )
         for selected, bar in zip(mask, bars):
             if selected:
-                bar.set_color(PALETTE["highlight"])
-                bar.set_edgecolor(PALETTE["highlight"])
+                bar.set_color(palette["highlight"])
+                bar.set_edgecolor(palette["highlight"])
                 bar.set_alpha(0.96)
     axis.set_xlabel("k")
     axis.set_ylabel("f(k) = P(X = k)")
-    axis.set_title(f"Función de densidad · probabilidad seleccionada = {probability:.8f}", color=PALETTE["text_dim"], fontsize=11, pad=10)
+    axis.set_title(
+        f"Función de densidad · probabilidad seleccionada = {probability:.8f}",
+        color=palette["text_dim"],
+        fontsize=11,
+        pad=10,
+    )
 
 
-def _draw_continuous_density(axis, distribution, x, mask, event, value_1, value_2, line_color, fill_color, probability) -> None:
+def _draw_continuous_density(
+    axis,
+    distribution,
+    x,
+    mask,
+    event,
+    value_1,
+    value_2,
+    line_color,
+    fill_color,
+    probability,
+    palette: dict[str, str],
+) -> None:
     with np.errstate(all="ignore"):
         y = np.asarray(distribution.pdf(x), dtype=float)
     y = np.nan_to_num(y, nan=0.0, posinf=np.nan, neginf=0.0)
@@ -110,31 +171,55 @@ def _draw_continuous_density(axis, distribution, x, mask, event, value_1, value_
     axis.fill_between(x, y, color=fill_color, alpha=0.30)
 
     if event == "P(X = x)":
-        axis.axvline(value_1, color=PALETTE["highlight"], linewidth=2, linestyle="--")
+        axis.axvline(value_1, color=palette["highlight"], linewidth=2, linestyle="--")
         axis.text(
             0.03,
             0.93,
             "En una distribución continua, P(X = x) = 0.",
             transform=axis.transAxes,
             va="top",
-            color=PALETTE["highlight"],
+            color=palette["highlight"],
             fontsize=9,
         )
     else:
-        axis.fill_between(x, y, where=mask, interpolate=True, color=PALETTE["highlight"], alpha=0.72, zorder=3)
+        axis.fill_between(
+            x,
+            y,
+            where=mask,
+            interpolate=True,
+            color=palette["highlight"],
+            alpha=0.72,
+            zorder=3,
+        )
 
     limits = [value_1]
     if event == "P(a ≤ X ≤ b)" and value_2 is not None:
         limits.append(value_2)
     for limit in limits:
-        axis.axvline(limit, color=PALETTE["highlight"], linewidth=1.35, linestyle=":")
+        axis.axvline(limit, color=palette["highlight"], linewidth=1.35, linestyle=":")
 
     axis.set_xlabel("x")
     axis.set_ylabel("f(x)")
-    axis.set_title(f"Función de densidad · área seleccionada = {probability:.8f}", color=PALETTE["text_dim"], fontsize=11, pad=10)
+    axis.set_title(
+        f"Función de densidad · área seleccionada = {probability:.8f}",
+        color=palette["text_dim"],
+        fontsize=11,
+        pad=10,
+    )
 
 
-def _draw_cdf(axis, distribution, spec, x, event, value_1, value_2, line_color, fill_color) -> None:
+def _draw_cdf(
+    axis,
+    distribution,
+    spec,
+    x,
+    event,
+    value_1,
+    value_2,
+    line_color,
+    fill_color,
+    palette: dict[str, str],
+) -> None:
     cdf = np.asarray(distribution.cdf(x), dtype=float)
     if spec.kind == "discreta":
         axis.step(x, cdf, where="post", color=line_color, linewidth=2.3)
@@ -152,22 +237,42 @@ def _draw_cdf(axis, distribution, spec, x, event, value_1, value_2, line_color, 
         plotted_value = float(np.floor(value)) if spec.kind == "discreta" else float(value)
         cdf_value = float(distribution.cdf(plotted_value))
         if x_min <= plotted_value <= x_max:
-            axis.scatter([plotted_value], [cdf_value], color=PALETTE["highlight"], s=68, edgecolors=PALETTE["axes_bg"], linewidth=0.8, zorder=6)
-            axis.axhline(cdf_value, color=PALETTE["highlight"], linewidth=1, linestyle="--", alpha=0.65)
-            axis.axvline(plotted_value, color=PALETTE["highlight"], linewidth=1, linestyle="--", alpha=0.65)
+            axis.scatter(
+                [plotted_value],
+                [cdf_value],
+                color=palette["highlight"],
+                s=68,
+                edgecolors=palette["axes_bg"],
+                linewidth=0.8,
+                zorder=6,
+            )
+            axis.axhline(
+                cdf_value,
+                color=palette["highlight"],
+                linewidth=1,
+                linestyle="--",
+                alpha=0.65,
+            )
+            axis.axvline(
+                plotted_value,
+                color=palette["highlight"],
+                linewidth=1,
+                linestyle="--",
+                alpha=0.65,
+            )
             offset = -0.13 if index == 0 else 0.07
             axis.annotate(
                 f"F({value:.4g}) = {cdf_value:.4f}",
                 xy=(plotted_value, cdf_value),
                 xytext=(plotted_value, np.clip(cdf_value + offset, 0.04, 1.02)),
-                color=PALETTE["highlight"],
+                color=palette["highlight"],
                 fontsize=8,
             )
 
     axis.set_ylim(-0.03, 1.08)
     axis.set_xlabel("x" if spec.kind == "continua" else "k")
     axis.set_ylabel("F(x) = P(X ≤ x)")
-    axis.set_title("Función de distribución", color=PALETTE["text_dim"], fontsize=11, pad=10)
+    axis.set_title("Función de distribución", color=palette["text_dim"], fontsize=11, pad=10)
 
 
 def create_distribution_figure(
@@ -178,20 +283,26 @@ def create_distribution_figure(
     value_2: float | None,
     probability: float,
     result_latex: str | None = None,
+    theme: str = "light",
 ) -> tuple[Figure, bool]:
     """Crea la figura y señala si algún límite queda fuera del rango visible."""
+    theme_name = _theme_name(theme)
+    palette = PALETTES[theme_name]
     distribution = spec.build(parameters)
     x, sampled = build_plot_axis(distribution, spec.kind)
-    line_color, fill_color = DISTRIBUTION_COLORS[spec.name]
+    line_color, fill_color = DISTRIBUTION_COLORS[theme_name][spec.name]
     mean, variance = distribution_moments(distribution)
     mask = event_mask(x, spec.kind, event, value_1, value_2)
 
-    # Disposición vertical: cada gráfico aprovecha todo el ancho disponible,
-    # especialmente cuando la aplicación se incrusta en Google Sites.
-    figure, axes = plt.subplots(2, 1, figsize=(11.8, 10.8), facecolor=PALETTE["figure_bg"])
+    figure, axes = plt.subplots(
+        2,
+        1,
+        figsize=(11.8, 10.8),
+        facecolor=palette["figure_bg"],
+    )
     density_axis, cdf_axis = axes
-    _prepare_axis(density_axis)
-    _prepare_axis(cdf_axis)
+    _prepare_axis(density_axis, palette)
+    _prepare_axis(cdf_axis, palette)
 
     parameter_text = "  ·  ".join(f"{key}={value:.5g}" for key, value in parameters.items())
     figure.suptitle(
@@ -199,16 +310,49 @@ def create_distribution_figure(
         f"media = {format_moment(mean)}    ·    varianza = {format_moment(variance)}",
         fontsize=13,
         fontweight="bold",
-        color=PALETTE["text"],
+        color=palette["text"],
         y=0.975,
     )
 
     if spec.kind == "discreta":
-        _draw_discrete_density(density_axis, distribution, x, mask, sampled, line_color, fill_color, probability)
+        _draw_discrete_density(
+            density_axis,
+            distribution,
+            x,
+            mask,
+            sampled,
+            line_color,
+            fill_color,
+            probability,
+            palette,
+        )
     else:
-        _draw_continuous_density(density_axis, distribution, x, mask, event, value_1, value_2, line_color, fill_color, probability)
+        _draw_continuous_density(
+            density_axis,
+            distribution,
+            x,
+            mask,
+            event,
+            value_1,
+            value_2,
+            line_color,
+            fill_color,
+            probability,
+            palette,
+        )
 
-    _draw_cdf(cdf_axis, distribution, spec, x, event, value_1, value_2, line_color, fill_color)
+    _draw_cdf(
+        cdf_axis,
+        distribution,
+        spec,
+        x,
+        event,
+        value_1,
+        value_2,
+        line_color,
+        fill_color,
+        palette,
+    )
 
     result_text = result_latex or rf"{event_to_latex(event, value_1, value_2)}\;=\;{probability:.10f}"
     figure.text(
@@ -219,11 +363,11 @@ def create_distribution_figure(
         va="bottom",
         fontsize=11.5,
         fontweight="bold",
-        color=PALETTE["result"],
+        color=palette["result"],
         bbox={
             "boxstyle": "round,pad=0.42",
-            "facecolor": PALETTE["panel_bg"],
-            "edgecolor": PALETTE["result"],
+            "facecolor": palette["panel_bg"],
+            "edgecolor": palette["result"],
             "linewidth": 1.2,
         },
     )
@@ -231,5 +375,7 @@ def create_distribution_figure(
 
     visible_min, visible_max = float(np.min(x)), float(np.max(x))
     limits = [value_1] + ([value_2] if value_2 is not None else [])
-    outside_visible_range = any(value is not None and not (visible_min <= value <= visible_max) for value in limits)
+    outside_visible_range = any(
+        value is not None and not (visible_min <= value <= visible_max) for value in limits
+    )
     return figure, outside_visible_range

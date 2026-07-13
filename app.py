@@ -30,88 +30,183 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-st.markdown(
-    """
-    <style>
-      .stApp { background: #F7F9FC; }
-      .block-container {
-          max-width: 1240px;
-          padding-top: 1.25rem;
-          padding-bottom: 2.5rem;
-      }
-      .hero {
-          background: white;
-          border: 1px solid #D9E2EC;
-          border-radius: 16px;
-          padding: 1.15rem 1.35rem;
-          margin-bottom: 1rem;
-          box-shadow: 0 4px 18px rgba(31, 41, 55, 0.05);
-      }
-      .hero h1 { margin: 0 0 .25rem 0; color: #1F2937; font-size: 2rem; }
-      .hero p { margin: 0; color: #5D6878; line-height: 1.55; }
-      .distribution-card {
-          background: white;
-          border: 1px solid #D9E2EC;
-          border-radius: 14px;
-          padding: .9rem 1rem;
-          margin: .4rem 0 1rem 0;
-      }
-      .type-discrete { color: #3D8BB8; font-weight: 700; }
-      .type-continuous { color: #9B5E86; font-weight: 700; }
-      [data-testid="stMetric"] {
-          background: white;
-          border: 1px solid #D9E2EC;
-          border-radius: 12px;
-          padding: .55rem .75rem;
-      }
-      .primary-result {
-          background: #F1F8F4;
-          border: 2px solid #3E8B62;
-          border-radius: 15px;
-          padding: .95rem 1.1rem .8rem 1.1rem;
-          margin: .25rem 0 1rem 0;
-      }
-      .primary-result-title {
-          color: #2F6F4E;
-          font-size: .9rem;
-          font-weight: 800;
-          letter-spacing: .035em;
-          text-transform: uppercase;
-          margin-bottom: .25rem;
-      }
-      .primary-result-value {
-          color: #1F2937;
-          font-size: 2rem;
-          line-height: 1.15;
-          font-weight: 800;
-          margin-bottom: .15rem;
-          overflow-wrap: anywhere;
-      }
-      .primary-result-note {
-          color: #586474;
-          font-size: .93rem;
-          margin: 0;
-      }
-      [data-testid="stExpander"] {
-          background: white;
-          border: 1px solid #D9E2EC;
-          border-radius: 14px;
-          overflow: hidden;
-      }
-      div[data-testid="stAlert"] { border-radius: 12px; }
-      .stButton > button {
-          border-radius: 10px;
-          min-height: 2.75rem;
-          font-weight: 700;
-      }
-      @media (max-width: 700px) {
-          .block-container { padding-left: .75rem; padding-right: .75rem; }
-          .hero h1 { font-size: 1.55rem; }
-      }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+THEME_COLORS = {
+    "light": {
+        "app_bg": "#F7F9FC",
+        "surface": "#FFFFFF",
+        "surface_alt": "#F8FAFD",
+        "border": "#D9E2EC",
+        "text": "#1F2937",
+        "text_dim": "#5D6878",
+        "metric_bg": "#FFFFFF",
+        "result_bg": "#F1F8F4",
+        "result_border": "#3E8B62",
+        "result_title": "#2F6F4E",
+        "discrete": "#3D8BB8",
+        "continuous": "#9B5E86",
+        "shadow": "rgba(31, 41, 55, 0.05)",
+    },
+    "dark": {
+        "app_bg": "#0E141D",
+        "surface": "#151D28",
+        "surface_alt": "#1A2330",
+        "border": "#37465A",
+        "text": "#E7EEF6",
+        "text_dim": "#B7C5D6",
+        "metric_bg": "#1A2330",
+        "result_bg": "#16271F",
+        "result_border": "#67D39A",
+        "result_title": "#89E1AE",
+        "discrete": "#78BDF2",
+        "continuous": "#E39BC9",
+        "shadow": "rgba(0, 0, 0, 0.24)",
+    },
+}
+
+
+def active_theme_type() -> str:
+    """Devuelve el tema activo de Streamlit con un respaldo seguro."""
+    try:
+        theme_type = str(st.context.theme.type).lower()
+    except (AttributeError, RuntimeError):
+        return "light"
+    return theme_type if theme_type in THEME_COLORS else "light"
+
+
+def active_theme_colors() -> dict[str, str]:
+    return THEME_COLORS[active_theme_type()]
+
+
+def apply_theme_css() -> None:
+    """Aplica superficies y textos con contraste explícito en ambos temas."""
+    colors = active_theme_colors()
+    st.markdown(
+        f"""
+        <style>
+          .stApp {{
+              background: {colors['app_bg']} !important;
+              color: {colors['text']} !important;
+          }}
+          .block-container {{
+              max-width: 1240px;
+              padding-top: 1.25rem;
+              padding-bottom: 2.5rem;
+          }}
+          .hero {{
+              background: {colors['surface']} !important;
+              border: 1px solid {colors['border']} !important;
+              border-radius: 16px;
+              padding: 1.15rem 1.35rem;
+              margin-bottom: 1rem;
+              box-shadow: 0 4px 18px {colors['shadow']};
+          }}
+          .hero h1 {{
+              margin: 0 0 .25rem 0;
+              color: {colors['text']} !important;
+              font-size: 2rem;
+          }}
+          .hero p {{
+              margin: 0;
+              color: {colors['text_dim']} !important;
+              line-height: 1.55;
+          }}
+          .distribution-card {{
+              background: {colors['surface']} !important;
+              border: 1px solid {colors['border']} !important;
+              border-radius: 14px;
+              padding: .9rem 1rem;
+              margin: .4rem 0 1rem 0;
+          }}
+          .distribution-description {{
+              color: {colors['text_dim']} !important;
+              margin-left: .6rem;
+          }}
+          .type-discrete {{
+              color: {colors['discrete']} !important;
+              font-weight: 700;
+          }}
+          .type-continuous {{
+              color: {colors['continuous']} !important;
+              font-weight: 700;
+          }}
+
+          /* Las métricas requieren color explícito: algunos navegadores
+             conservan el texto claro aunque el fondo quede claro. */
+          [data-testid="stMetric"] {{
+              background: {colors['metric_bg']} !important;
+              border: 1px solid {colors['border']} !important;
+              border-radius: 12px;
+              padding: .55rem .75rem;
+          }}
+          [data-testid="stMetric"] *,
+          [data-testid="stMetricLabel"] p,
+          [data-testid="stMetricValue"] {{
+              color: {colors['text']} !important;
+          }}
+
+          .primary-result {{
+              background: {colors['result_bg']} !important;
+              border: 2px solid {colors['result_border']} !important;
+              border-radius: 15px;
+              padding: .95rem 1.1rem .8rem 1.1rem;
+              margin: .25rem 0 1rem 0;
+          }}
+          .primary-result-title {{
+              color: {colors['result_title']} !important;
+              font-size: .9rem;
+              font-weight: 800;
+              letter-spacing: .035em;
+              text-transform: uppercase;
+              margin-bottom: .25rem;
+          }}
+          .primary-result-value {{
+              color: {colors['text']} !important;
+              font-size: 2rem;
+              line-height: 1.15;
+              font-weight: 800;
+              margin-bottom: .15rem;
+              overflow-wrap: anywhere;
+          }}
+          .primary-result-note {{
+              color: {colors['text_dim']} !important;
+              font-size: .93rem;
+              margin: 0;
+          }}
+
+          [data-testid="stExpander"] {{
+              background: {colors['surface']} !important;
+              border: 1px solid {colors['border']} !important;
+              border-radius: 14px;
+              overflow: hidden;
+          }}
+          [data-testid="stExpander"] summary,
+          [data-testid="stExpander"] summary * {{
+              color: {colors['text']} !important;
+          }}
+          [data-testid="stVerticalBlockBorderWrapper"] {{
+              border-color: {colors['border']} !important;
+          }}
+          [data-testid="stCaptionContainer"] p {{
+              color: {colors['text_dim']} !important;
+              opacity: .92;
+          }}
+          div[data-testid="stAlert"] {{ border-radius: 12px; }}
+          .stButton > button {{
+              border-radius: 10px;
+              min-height: 2.75rem;
+              font-weight: 700;
+          }}
+          @media (max-width: 700px) {{
+              .block-container {{ padding-left: .75rem; padding-right: .75rem; }}
+              .hero h1 {{ font-size: 1.55rem; }}
+          }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+apply_theme_css()
 
 
 def clear_result() -> None:
@@ -173,7 +268,7 @@ st.markdown(
     f"""
     <div class="distribution-card">
       <span class="{type_class}">{type_label}</span>
-      <span style="color:#5D6878; margin-left:.6rem;">{spec.description}</span>
+      <span class="distribution-description">{spec.description}</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -428,6 +523,7 @@ else:
         result["value_2"],
         result["probability"],
         result_latex=result["result_latex"],
+        theme=active_theme_type(),
     )
     st.pyplot(figure, width="stretch")
     plt.close(figure)
